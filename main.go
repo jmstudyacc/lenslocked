@@ -9,7 +9,7 @@ import (
 
 // creating a function to handle the http request & present a web page
 func handlerFunc(writer http.ResponseWriter, reader *http.Request) {
-	fmt.Fprint(writer, "<h1>Welcome to the test site!</h1>")
+	fmt.Fprint(writer, "<h1>Welcome to the awesome site!</h1>")
 }
 
 func main() {
