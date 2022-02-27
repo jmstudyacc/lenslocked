@@ -18,8 +18,11 @@ func contactHandler(writer http.ResponseWriter, reader *http.Request) {
 	fmt.Fprint(writer, "<h1>Contact Page</h1><p>To get in touch, email me at <a href=\"mailto:jmstudyacc@gmail.com\">jmstudyacc@gmail.com</a>")
 }
 
+// Router : Creating a Router struct type that implements ServeHTTP - this is useful when needing custom fields
+type Router struct{}
+
 // implementing a custom router
-func pathHandler(writer http.ResponseWriter, reader *http.Request) {
+func (Router) ServeHTTP(writer http.ResponseWriter, reader *http.Request) {
 	// implement a switch statement to capture the options
 	switch reader.URL.Path {
 	case "/":
@@ -29,19 +32,25 @@ func pathHandler(writer http.ResponseWriter, reader *http.Request) {
 	default:
 		// this returns a 404 courtesy of the NotFound function
 		//http.NotFound(writer, reader)
+
 		// this allows you to customise the response
 		http.Error(writer, "Error 404\nPage Not Found - Did you mean something else?", http.StatusNotFound)
 	}
 }
 
 func main() {
-	http.HandleFunc("/", pathHandler)
-	// registration - pass in a pattern to determine the paths to be used by the handler and a function for the handler
+	// creating this Router type allows it to be passed to ListenAndServe
+	var router Router
+
+	//http.HandleFunc("/", pathHandler)
+
+	// Registration - pass in a pattern to determine the paths to be used by the handler and a function for the handler
 	//http.HandleFunc("/", homeHandler)
 	//http.HandleFunc("/contact", contactHandler)
+
 	fmt.Println("Starting the webserver on :3000")
 	// starts the server & prevents the code from exiting
-	err := http.ListenAndServe(":3000", nil)
+	err := http.ListenAndServe(":3000", router)
 
 	if err != nil {
 		panic(err)
