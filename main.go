@@ -24,7 +24,7 @@ func myRequestHandler(writer http.ResponseWriter, reader *http.Request) {
 	userID := chi.URLParam(reader, "userID")
 
 	_, err := writer.Write([]byte(fmt.Sprintf("Hi there user %v", userID)))
-	fmt.Printf("%v\n", userID)
+	fmt.Printf("User has ID: %v\n", userID)
 	if err != nil {
 		return
 	}
@@ -47,7 +47,7 @@ func main() {
 	r.Get("/", homeHandler)
 	r.Get("/contact", contactHandler)
 	r.Get("/faq", faqHandler)
-	r.Get("/users", myRequestHandler)
+	r.Get("/users/{userID}", myRequestHandler)
 	r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Page Not Found", http.StatusNotFound)
 	})
