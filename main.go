@@ -17,6 +17,18 @@ func homeHandler(writer http.ResponseWriter, reader *http.Request) {
 
 func contactHandler(writer http.ResponseWriter, reader *http.Request) {
 	fmt.Fprint(writer, "<h1>Contact Page</h1><p>To get in touch, email me at <a href=\"mailto:jmstudyacc@gmail.com\">jmstudyacc@gmail.com</a></p>")
+
+}
+
+func myRequestHandler(writer http.ResponseWriter, reader *http.Request) {
+	userID := chi.URLParam(reader, "userID")
+
+	_, err := writer.Write([]byte(fmt.Sprintf("Hi there user %v", userID)))
+	fmt.Printf("%v\n", userID)
+	if err != nil {
+		return
+	}
+
 }
 
 // creating a function to handle the HTTP request & response for FAQ page
@@ -30,44 +42,12 @@ func faqHandler(writer http.ResponseWriter, reader *http.Request) {
 </ul>`)
 }
 
-// implementing a custom router
-//func pathHandler(writer http.ResponseWriter, reader *http.Request) {
-// implement a switch statement to capture the options
-//	switch reader.URL.Path {
-//	case "/":
-//		homeHandler(writer, reader)
-//	case "/contact":
-//		contactHandler(writer, reader)
-//	default:
-// this allows you to customise the response
-//		http.Error(writer, "Error 404\nPage Not Found - Did you mean something else?", http.StatusNotFound)
-//	}
-//}
-
-type Router struct{}
-
-// implementing a custom router
-func (Router) ServeHTTP(writer http.ResponseWriter, reader *http.Request) {
-	// implement a switch statement to capture the options
-	switch reader.URL.Path {
-	case "/":
-		homeHandler(writer, reader)
-	case "/contact":
-		contactHandler(writer, reader)
-	case "/faq":
-		faqHandler(writer, reader)
-	default:
-		// this allows you to customise the response
-		writer.Header().Set("Content-Type", "text/html;charset=utf8")
-		http.Error(writer, "Error 404\nPage Not Found - Did you mean something else?", http.StatusNotFound)
-	}
-}
-
 func main() {
 	r := chi.NewRouter()
 	r.Get("/", homeHandler)
 	r.Get("/contact", contactHandler)
 	r.Get("/faq", faqHandler)
+	r.Get("/users", myRequestHandler)
 	r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Page Not Found", http.StatusNotFound)
 	})
