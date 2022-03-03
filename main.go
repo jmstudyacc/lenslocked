@@ -4,6 +4,7 @@ package main
 // importing fmt to print out stuff and net/http to set up webserver
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
@@ -63,10 +64,16 @@ func (Router) ServeHTTP(writer http.ResponseWriter, reader *http.Request) {
 }
 
 func main() {
-	var router Router
+	r := chi.NewRouter()
+	r.Get("/", homeHandler)
+	r.Get("/contact", contactHandler)
+	r.Get("/faq", faqHandler)
+	r.NotFound(func(writer http.ResponseWriter, request *http.Request) {
+		http.Error(writer, "Page Not Found", http.StatusNotFound)
+	})
 	fmt.Println("Starting the webserver on :3000")
 	// starts the server & prevents the code from exiting
-	err := http.ListenAndServe(":3000", router)
+	err := http.ListenAndServe(":3000", r)
 
 	if err != nil {
 		panic(err)
