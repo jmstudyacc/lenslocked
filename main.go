@@ -1,11 +1,18 @@
 // tells Go - package main is the entrypoint and main() is where the code starts
+//
+// This branch shows the use of the go-chi/chi logger middleware
+// Docs on this can be found at: https://github.com/go-chi/chi/tree/master/_examples/logging
 package main
 
 // importing fmt to print out stuff and net/http to set up webserver
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5"
 	"net/http"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/sirupsen/logrus"
 )
 
 // creating a function to handle the http request & present a web page
@@ -42,8 +49,107 @@ func faqHandler(writer http.ResponseWriter, reader *http.Request) {
 </ul>`)
 }
 
+// Structured Logger is a simple, but powerful implementation of a custom structured
+// logger back on logrus. Check out https://github.com/go-chi/httplog for dedicated pkg
+// based on this work, designed for context-based http routers
+
+type StructuredLogger struct {
+	Logger *logrus.Logger
+}
+
+type StructuredLoggerEntry struct {
+	Logger logrus.FieldLogger
+}
+
+func NewStructuredLogger(logger *logrus.Logger) func(next http.Handler) http.Handler {
+	return middleware.RequestLogger(&StructuredLogger{logger})
+}
+
+func (l *StructuredLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
+	l.Logger = l.Logger.WithFields(logrus.Fields{
+		"resp_status": status, "resp_bytes_length": bytes,
+		"resp_elapsed_ms": float64(elapsed.Nanoseconds()) / 1000000.0,
+	})
+
+	l.Logger.Infoln("Request Complete")
+}
+
+func (l *StructuredLoggerEntry) Panic(v interface{}, stack []byte) {
+	l.Logger = l.Logger.WithFields(logrus.Fields{
+		"stack": string(stack),
+		"panic": fmt.Sprintf("%+v", v),
+	})
+}
+
+func (l *StructuredLogger) NewLogEntry(reader *http.Request) middleware.LogEntry {
+	entry := &StructuredLoggerEntry{Logger: logrus.NewEntry(l.Logger)}
+	logFields := logrus.Fields{}
+
+	logFields["ts"] = time.Now().UTC().Format(time.RFC1123)
+
+	if reqID := middleware.GetReqID(reader.Context()); reqID != "" {
+		logFields["req_id"] = reqID
+	}
+
+	scheme := "http"
+	if reader.TLS != nil {
+		scheme = "https"
+	}
+
+	logFields["http_scheme"] = scheme
+	logFields["http_proto"] = reader.Proto
+	logFields["http_method"] = reader.Method
+
+	logFields["remote_addr"] = reader.RemoteAddr
+	logFields["user_agent"] = reader.UserAgent()
+
+	logFields["uri"] = fmt.Sprintf("%s://%s%s", scheme, reader.Host, reader.RequestURI)
+
+	entry.Logger = entry.Logger.WithFields(logFields)
+
+	entry.Logger.Infoln("Request Started")
+
+	return entry
+}
+
+// Following are helper methods used by the application to get the
+// request-scoped logger entry & set additional fields between handlers
+//
+// A useful pattern to use to set state on the entry as it
+// passes through the handler chain, which at any point can be logged
+// with a call to .Print(), .Info(), etc.
+
+func GetLogEntry(reader *http.Request) logrus.FieldLogger {
+	entry := middleware.GetLogEntry(reader).(*StructuredLoggerEntry)
+	return entry.Logger
+}
+
+func LogEntrySetField(reader *http.Request, key string, value interface{}) {
+	if entry, ok := reader.Context().Value(middleware.LogEntryCtxKey).(*StructuredLoggerEntry); ok {
+		entry.Logger = entry.Logger.WithField(key, value)
+	}
+}
+
+func LogEntrySetFields(reader *http.Request, fields map[string]interface{}) {
+	if entry, ok := reader.Context().Value(middleware.LogEntryCtxKey).(*StructuredLoggerEntry); ok {
+		entry.Logger = entry.Logger.WithFields(fields)
+	}
+}
+
 func main() {
+	// sets up the logger backend using sirupsen/logrus and configure it
+	// to use a custom JSONFormatter. Refer to the logrus docs on how to
+	// configure the backend at https://github.com/sirupsen/logrus
+	logger := logrus.New()
+	logger.Formatter = &logrus.JSONFormatter{
+		DisableTimestamp: true,
+	}
+
 	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(NewStructuredLogger(logger))
+	r.Use(middleware.Recoverer)
+
 	r.Get("/", homeHandler)
 	r.Get("/contact", contactHandler)
 	r.Get("/faq", faqHandler)
