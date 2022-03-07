@@ -1,3 +1,13 @@
 <h1>Hello, {{.Name}}</h1>
-<p>You are {{.Age}} years old and you have visited this site {{.Meta.Visits}} times.</p>
+<p>You are {{.Age}} years old, and you have visited this site {{.Meta.Visits}} times.</p>
 {{/* You use Meta.Visits to access the Visits value - you are just branching down the tree*/}}
+<p>Bio: {{.Bio}}</p>
+
+<script>
+    const user = {
+    "name": {{.Name}},
+    "bio": {{.Bio}},
+    "age": {{.Age}}
+ };
+ console.log(user);
+</script>
