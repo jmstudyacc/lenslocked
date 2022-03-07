@@ -11,36 +11,38 @@ import (
 	"path/filepath"
 )
 
-// creating a function to handle the http request & present a web page
-func homeHandler(writer http.ResponseWriter, reader *http.Request) {
-	// defines the Content-Type header to be used >> Content Type Headers - HTTP Headers ~ Mozilla
-	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
-	// agnostic example - filepath.Join inserts the appropriate path
-	tmplPath := filepath.Join("templates", "home.gohtml")
+func executeTemplate(wr http.ResponseWriter, filepath string) {
+	wr.Header().Set("Content-Type", "text/html; charset=utf-8")
 	// parse the template itself and then execute - UNIX based example = template.ParseFiles("templates/home.gohtml")
-	templ, err := template.ParseFiles(tmplPath)
+	templ, err := template.ParseFiles(filepath)
 	if err != nil {
 		// log = inclusion of timestamps etc. in the log messages
 		log.Printf("Parsing template %v.", err)
-		http.Error(writer, "There was an error parsing the template",
+		http.Error(wr, "There was an error parsing the template",
 			http.StatusInternalServerError)
 		// the return here tells the code to stop running
 		return
 	}
 
-	err = templ.Execute(writer, nil)
+	err = templ.Execute(wr, nil)
 	if err != nil {
 		log.Printf("Executing template %v.", err)
-		http.Error(writer, "There was an error executing the template",
+		http.Error(wr, "There was an error executing the template",
 			http.StatusInternalServerError)
 		// the return here tells the code to stop running
 		return
 	}
 }
 
-func contactHandler(writer http.ResponseWriter, reader *http.Request) {
-	fmt.Fprint(writer, "<h1>Contact Page</h1><p>To get in touch, email me at <a href=\"mailto:jmstudyacc@gmail.com\">jmstudyacc@gmail.com</a></p>")
+// creating a function to handle the http request & present a web page
+func homeHandler(writer http.ResponseWriter, reader *http.Request) {
+	tmplPath := filepath.Join("templates", "home.gohtml")
+	executeTemplate(writer, tmplPath)
+}
 
+func contactHandler(writer http.ResponseWriter, reader *http.Request) {
+	tmplPath := filepath.Join("templates", "contact.gohtml")
+	executeTemplate(writer, tmplPath)
 }
 
 func myRequestHandler(writer http.ResponseWriter, reader *http.Request) {
