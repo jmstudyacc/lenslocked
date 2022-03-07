@@ -5,14 +5,37 @@ package main
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"html/template"
+	"log"
 	"net/http"
+	"path/filepath"
 )
 
 // creating a function to handle the http request & present a web page
 func homeHandler(writer http.ResponseWriter, reader *http.Request) {
 	// defines the Content-Type header to be used >> Content Type Headers - HTTP Headers ~ Mozilla
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(writer, "<h1>Welcome to the awesome site!</h1>")
+	// agnostic example - filepath.Join inserts the appropriate path
+	tmplPath := filepath.Join("templates", "home.gohtml")
+	// parse the template itself and then execute - UNIX based example = template.ParseFiles("templates/home.gohtml")
+	templ, err := template.ParseFiles(tmplPath)
+	if err != nil {
+		// log = inclusion of timestamps etc. in the log messages
+		log.Printf("Parsing template %v.", err)
+		http.Error(writer, "There was an error parsing the template",
+			http.StatusInternalServerError)
+		// the return here tells the code to stop running
+		return
+	}
+
+	err = templ.Execute(writer, nil)
+	if err != nil {
+		log.Printf("Executing template %v.", err)
+		http.Error(writer, "There was an error executing the template",
+			http.StatusInternalServerError)
+		// the return here tells the code to stop running
+		return
+	}
 }
 
 func contactHandler(writer http.ResponseWriter, reader *http.Request) {
