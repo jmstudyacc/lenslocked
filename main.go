@@ -58,13 +58,8 @@ func myRequestHandler(writer http.ResponseWriter, reader *http.Request) {
 
 // creating a function to handle the HTTP request & response for FAQ page
 func faqHandler(writer http.ResponseWriter, reader *http.Request) {
-	writer.Header().Set("Content-Type", "text/html; charset=utf8")
-	fmt.Fprint(writer, `<h1>FAQ Page</h1>
-<ul>
-	<li><h3>Is there a Free Version?</h3><p>Yes! We offer a free trial for 30 days on any paid plans.</p>
-	<li><h3>What are your Support hours?</h3><p>We have support staff answering emails 24/7, though response times may be slower at weekends,</p>
-	<li><h3>How do I contact Support?</h3><p>Email us - <a href="mailto:support@lenslocked.com">support@lenslocked.com</a></p>
-</ul>`)
+	// not creating a separate variable to hold the String - just placing into the function directly
+	executeTemplate(writer, filepath.Join("templates", "faq.gohtml"))
 }
 
 func main() {
